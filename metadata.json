@@ -1,0 +1,9 @@
+{
+  "name": "WhatsAI Companion",
+  "description": "A WhatsApp-inspired AI chat companion. Draft, refine, and translate messages with Gemini before sending them to WhatsApp. Features a familiar UI with powerful AI tools.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera",
+    "geolocation"
+  ]
+}
