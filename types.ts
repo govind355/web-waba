@@ -31,3 +31,14 @@ export interface AIToolResponse {
   result: string;
   type: ToolType;
 }
+
+declare global {
+  interface Window {
+    process?: {
+      type?: string;
+      versions?: {
+        electron?: string;
+      };
+    };
+  }
+}

@@ -1,77 +1,100 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AIPanel from './components/AIPanel';
-import { Loader2, Bot, Lock, RotateCcw, ShieldAlert, Terminal } from 'lucide-react';
+import { Bot, Lock, RotateCcw, ShieldCheck, ExternalLink, Smartphone } from 'lucide-react';
 
 const App: React.FC = () => {
   const [isPanelOpen, setIsPanelOpen] = useState(true);
-  const [showInstructions, setShowInstructions] = useState(false);
+  const [isElectron, setIsElectron] = useState(false);
 
-  // We detect if we are likely in a standard browser (which blocks the iframe) vs Electron
-  // This is a simple heuristic. In a real app, you'd use window.ipcRenderer checks.
-  const isProbablyBrowser = !window.navigator.userAgent.includes('Electron');
+  useEffect(() => {
+    // Robust check for Electron
+    // Because we spoof UserAgent in electron.js, we cannot rely on navigator.userAgent.
+    // Instead, we check for the process object injected by nodeIntegration: true
+    const isNative = !!(window.process && window.process.versions && window.process.versions.electron);
+    setIsElectron(isNative);
+  }, []);
+
+  const handleOpenWeb = () => {
+    window.open('https://web.whatsapp.com/', '_blank');
+  };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#d1d7db] text-slate-800">
-      {/* LEFT SIDE: WhatsApp Web Wrapper */}
+    <div className="flex h-screen w-screen overflow-hidden bg-[#d1d7db] text-slate-800 font-sans">
+      {/* LEFT SIDE: WhatsApp Area */}
       <div className="flex-1 relative flex flex-col min-w-0 shadow-xl z-10">
         
-        {/* Virtual Browser Address Bar */}
+        {/* Header / Virtual Address Bar */}
         <div className="bg-[#f0f2f5] border-b border-gray-300 h-10 flex items-center px-4 gap-3 shrink-0">
-            <div className="flex gap-1.5">
+            <div className="flex gap-1.5 opacity-50 hover:opacity-100 transition-opacity">
                 <div className="w-3 h-3 rounded-full bg-red-400"></div>
                 <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
                 <div className="w-3 h-3 rounded-full bg-green-400"></div>
             </div>
             <div className="flex-1 flex justify-center">
-                 <div className="bg-white px-3 py-1 rounded-md border border-gray-300 flex items-center gap-2 text-xs text-gray-600 w-full max-w-md">
+                 <div className="bg-white px-3 py-1 rounded-md border border-gray-300 flex items-center gap-2 text-xs text-gray-600 w-full max-w-md shadow-sm">
                     <Lock size={10} className="text-green-600" />
-                    <span className="flex-1 text-center">web.whatsapp.com</span>
+                    <span className="flex-1 text-center font-mono text-[11px]">
+                      {isElectron ? 'web.whatsapp.com (Native Wrapper)' : 'web.whatsapp.com (External Tab)'}
+                    </span>
                     <RotateCcw size={10} className="cursor-pointer hover:text-black" onClick={() => window.location.reload()} />
                  </div>
             </div>
-            <div className="w-10"></div> {/* Spacer for balance */}
+            <div className="w-10"></div> 
         </div>
 
-        {/* Browser Content Area */}
-        <div className="flex-1 relative bg-white">
-             {/* Loading / Error State Overlay */}
-             {isProbablyBrowser && (
-                 <div className="absolute inset-0 z-0 flex flex-col items-center justify-center p-8 text-center bg-[#f0f2f5]">
-                      <div className="bg-white p-6 rounded-2xl shadow-sm max-w-md">
-                          <div className="mx-auto bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-                             <ShieldAlert className="text-green-600" size={24} />
-                          </div>
-                          <h2 className="text-lg font-semibold text-gray-800 mb-2">Browser Security Restriction</h2>
-                          <p className="text-sm text-gray-600 mb-6">
-                              WhatsApp Web cannot be loaded inside a standard website iframe due to <b>X-Frame-Options</b> security headers.
-                          </p>
-                          
-                          <button 
-                             onClick={() => setShowInstructions(true)}
-                             className="w-full bg-[#00a884] hover:bg-[#008f6f] text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
-                          >
-                             <Terminal size={16} />
-                             How to Fix (Enable Electron)
-                          </button>
-                          
-                          <div className="mt-4 pt-4 border-t border-gray-100">
-                              <p className="text-xs text-gray-400">
-                                  If you just want to test the AI Panel, you can use the sidebar on the right.
-                              </p>
-                          </div>
-                      </div>
-                 </div>
-             )}
+        {/* Content Area */}
+        <div className="flex-1 relative bg-[#f0f2f5] flex flex-col">
+             
+            {/* SCENARIO A: ELECTRON (NATIVE) */}
+            {isElectron && (
+                <iframe 
+                  src="https://web.whatsapp.com/" 
+                  className="w-full h-full border-none"
+                  title="WhatsApp Web"
+                  allow="microphone; camera; midi; encrypted-media; clipboard-read; clipboard-write; geolocation; fullscreen"
+                />
+            )}
 
-            {/* The Actual Iframe */}
-            {/* In Electron with the provided 'electron.js', this will load perfectly over the warning above. */}
-            <iframe 
-              src="https://web.whatsapp.com/" 
-              className="relative z-10 w-full h-full border-none"
-              title="WhatsApp Web"
-              allow="microphone; camera; midi; encrypted-media; clipboard-read; clipboard-write; geolocation; fullscreen"
-            />
+            {/* SCENARIO B: BROWSER (FALLBACK) */}
+            {!isElectron && (
+               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#f0f2f5]">
+                   <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-gray-200 p-8 flex flex-col items-center">
+                       <div className="w-16 h-16 bg-[#25d366] rounded-full flex items-center justify-center mb-6 shadow-lg shadow-green-100">
+                           <Smartphone className="text-white" size={32} />
+                       </div>
+                       
+                       <h2 className="text-2xl font-light text-gray-800 mb-2">Welcome to WhatsAI</h2>
+                       <p className="text-sm text-gray-500 mb-8 leading-relaxed">
+                           To use WhatsApp inside this window, you must run this app using <b>Electron</b>. 
+                           Currently, you are in a standard browser, so we can't embed WhatsApp directly.
+                       </p>
+
+                       <button 
+                           onClick={handleOpenWeb}
+                           className="w-full bg-[#00a884] hover:bg-[#008f6f] text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md active:scale-95"
+                       >
+                           Open WhatsApp Web <ExternalLink size={16} />
+                       </button>
+
+                       <div className="mt-6 pt-6 border-t border-gray-100 w-full">
+                           <div className="flex items-start gap-3 text-left p-3 bg-blue-50 rounded-lg">
+                               <ShieldCheck className="text-blue-600 mt-0.5" size={16} />
+                               <div>
+                                   <p className="text-xs font-semibold text-blue-800">Want the full experience?</p>
+                                   <p className="text-[11px] text-blue-600 mt-1">
+                                       Run <code className="bg-blue-100 px-1 rounded">npm run electron</code> in your terminal. This will launch a dedicated window where WhatsApp works perfectly alongside the AI.
+                                   </p>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+                   
+                   <p className="mt-8 text-xs text-gray-400">
+                       The AI Panel on the right is fully active! You can draft messages there.
+                   </p>
+               </div>
+            )}
         </div>
 
         {/* Floating Toggle (Mobile/Closed State) */}
@@ -93,63 +116,6 @@ const App: React.FC = () => {
             <AIPanel isOpen={isPanelOpen} toggleOpen={() => setIsPanelOpen(!isPanelOpen)} />
         </div>
       </div>
-
-      {/* Instructions Modal */}
-      {showInstructions && (
-          <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white">
-                      <h3 className="text-xl font-bold text-gray-800">Enable Virtual Browser Mode</h3>
-                      <button onClick={() => setShowInstructions(false)} className="text-gray-400 hover:text-gray-600">
-                          <ShieldAlert size={20} />
-                      </button>
-                  </div>
-                  <div className="p-6 space-y-6">
-                      <div className="space-y-2">
-                          <p className="text-sm text-gray-600">To bypass the white screen, you must wrap this app in Electron and strip the security headers. Use the included <code className="bg-gray-100 px-1 py-0.5 rounded text-red-500">electron.js</code> file.</p>
-                      </div>
-
-                      <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto text-left">
-                          <pre className="text-xs text-green-400 font-mono leading-relaxed">
-{`// electron.js (Main Process)
-const { app, session } = require('electron');
-
-app.whenReady().then(() => {
-  // 1. Strip X-Frame-Options to allow Iframe
-  session.defaultSession.webRequest.onHeadersReceived(
-    { urls: ['*://*.whatsapp.com/*'] },
-    (details, callback) => {
-      const headers = { ...details.responseHeaders };
-      delete headers['x-frame-options']; // <--- THE MAGIC FIX
-      delete headers['content-security-policy'];
-      callback({ responseHeaders: headers });
-    }
-  );
-
-  // 2. Spoof User Agent so WhatsApp thinks it's Chrome
-  session.defaultSession.setUserAgent(
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ...'
-  );
-});`}
-                          </pre>
-                      </div>
-
-                      <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                          <h4 className="text-sm font-semibold text-blue-800 mb-1">Why is this necessary?</h4>
-                          <p className="text-xs text-blue-600">
-                              WhatsApp Web sends a specific signal (`X-Frame-Options: DENY`) telling browsers "Do not let other websites embed me." 
-                              Native wrappers like Electron have the power to ignore this signal, turning your app into a customized browser.
-                          </p>
-                      </div>
-                  </div>
-                  <div className="p-4 bg-gray-50 border-t border-gray-100 text-right">
-                      <button onClick={() => setShowInstructions(false)} className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-black">
-                          Got it, I'll run in Electron
-                      </button>
-                  </div>
-              </div>
-          </div>
-      )}
     </div>
   );
 };
